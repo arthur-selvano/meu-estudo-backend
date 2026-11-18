@@ -144,6 +144,9 @@ public class GrupoEstudo
     {
         GarantirParticipacao(usuarioId);
 
+        if (colunaId == Guid.Empty)
+            throw new DomainException("A coluna do card é obrigatória.");
+
         var coluna = _colunas.SingleOrDefault(c => c.Id == colunaId)
                      ?? throw new DomainException("Coluna não encontrada neste grupo.");
 
@@ -155,6 +158,8 @@ public class GrupoEstudo
             .DefaultIfEmpty(-1)
             .Max() + 1;
 
+        var ultimaColuna = _colunas.Max(c => c.Ordem);
+
         var topico = new TopicoEstudo(
             Id,
             coluna.Id,
@@ -164,9 +169,28 @@ public class GrupoEstudo
             responsavelId,
             prioridade,
             ordem,
-            dataPrevista);
+            dataPrevista,
+            concluido: coluna.Ordem == ultimaColuna);
 
         _topicos.Add(topico);
+
+        return topico;
+    }
+
+    /// <summary>
+    /// Define o responsável por um card, ou remove a atribuição quando <paramref name="responsavelId"/>
+    /// é nulo. O responsável deve ser o dono ou um membro com convite aceito.
+    /// Permitido apenas para o dono ou para membros com convite aceito.
+    /// </summary>
+    public TopicoEstudo AlterarResponsavelTopico(Guid usuarioId, Guid topicoId, Guid? responsavelId)
+    {
+        GarantirParticipacao(usuarioId);
+
+        var topico = ObterTopico(topicoId);
+
+        GarantirResponsavelValido(responsavelId);
+
+        topico.DefinirResponsavel(responsavelId);
 
         return topico;
     }

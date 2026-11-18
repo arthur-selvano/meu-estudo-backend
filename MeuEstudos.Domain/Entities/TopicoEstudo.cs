@@ -40,7 +40,8 @@ public class TopicoEstudo
         Guid? responsavelId,
         PrioridadeTopico prioridade,
         int ordem,
-        DateOnly? dataPrevista)
+        DateOnly? dataPrevista,
+        bool concluido = false)
     {
         if (grupoId == Guid.Empty)
             throw new DomainException("O grupo do tópico é obrigatório.");
@@ -75,7 +76,7 @@ public class TopicoEstudo
         Prioridade = prioridade;
         Ordem = ordem;
         DataPrevista = dataPrevista;
-        Concluido = false;
+        Concluido = concluido;
         CriadoEm = DateTime.UtcNow;
     }
 
@@ -85,6 +86,15 @@ public class TopicoEstudo
     internal void AlternarConclusao()
     {
         Concluido = !Concluido;
+    }
+
+    /// <summary>
+    /// Define ou remove o responsável pelo card. A validação de quem pode ser
+    /// responsável é responsabilidade do agregado <see cref="GrupoEstudo"/>.
+    /// </summary>
+    internal void DefinirResponsavel(Guid? responsavelId)
+    {
+        ResponsavelId = responsavelId;
     }
 
     /// <summary>
