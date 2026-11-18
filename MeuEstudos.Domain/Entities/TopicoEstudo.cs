@@ -1,9 +1,10 @@
+using MeuEstudos.Domain.Enums;
 using MeuEstudos.Domain.Exceptions;
 
 namespace MeuEstudos.Domain.Entities;
 
 /// <summary>
-/// Tópico de estudo pertencente a um grupo. Entidade interna do agregado <see cref="GrupoEstudo"/>:
+/// Card/tópico de estudo pertencente a um grupo. Entidade interna do agregado <see cref="GrupoEstudo"/>:
 /// só deve ser criada ou alterada por meio do próprio grupo.
 /// </summary>
 public class TopicoEstudo
@@ -12,9 +13,13 @@ public class TopicoEstudo
 
     public Guid Id { get; private set; }
     public Guid GrupoId { get; private set; }
+    public Guid ColunaId { get; private set; }
     public Guid CriadoPorId { get; private set; }
+    public Guid? ResponsavelId { get; private set; }
     public string Titulo { get; private set; } = string.Empty;
     public string? Descricao { get; private set; }
+    public PrioridadeTopico Prioridade { get; private set; }
+    public int Ordem { get; private set; }
     public DateOnly? DataPrevista { get; private set; }
     public bool Concluido { get; private set; }
     public DateTime CriadoEm { get; private set; }
@@ -26,10 +31,22 @@ public class TopicoEstudo
     {
     }
 
-    internal TopicoEstudo(Guid grupoId, Guid criadoPorId, string titulo, string? descricao, DateOnly? dataPrevista)
+    internal TopicoEstudo(
+        Guid grupoId,
+        Guid colunaId,
+        Guid criadoPorId,
+        string titulo,
+        string? descricao,
+        Guid? responsavelId,
+        PrioridadeTopico prioridade,
+        int ordem,
+        DateOnly? dataPrevista)
     {
         if (grupoId == Guid.Empty)
             throw new DomainException("O grupo do tópico é obrigatório.");
+
+        if (colunaId == Guid.Empty)
+            throw new DomainException("A coluna do tópico é obrigatória.");
 
         if (criadoPorId == Guid.Empty)
             throw new DomainException("O autor do tópico é obrigatório.");
@@ -42,11 +59,21 @@ public class TopicoEstudo
         if (tituloNormalizado.Length > TituloMaxLength)
             throw new DomainException($"O título do tópico deve ter no máximo {TituloMaxLength} caracteres.");
 
+        if (ordem < 0)
+            throw new DomainException("A ordem do tópico não pode ser negativa.");
+
+        if (!Enum.IsDefined(prioridade))
+            throw new DomainException("A prioridade do tópico é inválida.");
+
         Id = Guid.NewGuid();
         GrupoId = grupoId;
+        ColunaId = colunaId;
         CriadoPorId = criadoPorId;
+        ResponsavelId = responsavelId;
         Titulo = tituloNormalizado;
         Descricao = string.IsNullOrWhiteSpace(descricao) ? null : descricao.Trim();
+        Prioridade = prioridade;
+        Ordem = ordem;
         DataPrevista = dataPrevista;
         Concluido = false;
         CriadoEm = DateTime.UtcNow;
@@ -58,5 +85,22 @@ public class TopicoEstudo
     internal void AlternarConclusao()
     {
         Concluido = !Concluido;
+    }
+
+    /// <summary>
+    /// Move o card para outra coluna/posição. O tópico é considerado concluído
+    /// quando a coluna de destino é a última do quadro.
+    /// </summary>
+    internal void MoverPara(Guid colunaId, int ordem, bool concluido)
+    {
+        if (colunaId == Guid.Empty)
+            throw new DomainException("A coluna de destino é obrigatória.");
+
+        if (ordem < 0)
+            throw new DomainException("A ordem do tópico não pode ser negativa.");
+
+        ColunaId = colunaId;
+        Ordem = ordem;
+        Concluido = concluido;
     }
 }

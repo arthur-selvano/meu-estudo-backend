@@ -24,6 +24,11 @@ public sealed class GrupoEstudoRepository : IGrupoEstudoRepository
             .AsSplitQuery()
             .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
 
+    public Task<GrupoEstudo?> ObterPorTopicoIdAsync(Guid topicoId, CancellationToken cancellationToken = default)
+        => ComMembrosETopicos()
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(g => g.Topicos.Any(t => t.Id == topicoId), cancellationToken);
+
     public async Task<IReadOnlyCollection<GrupoEstudo>> ObterPorDonoAsync(
         Guid donoId,
         CancellationToken cancellationToken = default)
@@ -72,5 +77,6 @@ public sealed class GrupoEstudoRepository : IGrupoEstudoRepository
     private IQueryable<GrupoEstudo> ComMembrosETopicos()
         => _context.GruposEstudo
             .Include(g => g.Membros)
+            .Include(g => g.Colunas)
             .Include(g => g.Topicos);
 }

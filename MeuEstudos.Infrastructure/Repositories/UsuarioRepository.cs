@@ -39,6 +39,22 @@ public sealed class UsuarioRepository : IUsuarioRepository
             .ToDictionaryAsync(usuario => usuario.Id, usuario => usuario.Nome, cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, UsuarioResumo>> ObterResumosPorIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        var idsDistintos = ids.Distinct().ToArray();
+
+        if (idsDistintos.Length == 0)
+            return new Dictionary<Guid, UsuarioResumo>();
+
+        return await _context.Usuarios
+            .AsNoTracking()
+            .Where(usuario => idsDistintos.Contains(usuario.Id))
+            .Select(usuario => new UsuarioResumo(usuario.Id, usuario.Nome, usuario.FotoUrl))
+            .ToDictionaryAsync(usuario => usuario.Id, cancellationToken);
+    }
+
     public Task<bool> ExisteEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var emailNormalizado = Usuario.NormalizarEmail(email);

@@ -8,11 +8,18 @@ namespace MeuEstudos.Domain.Repositories;
 public interface IGrupoEstudoRepository
 {
     /// <summary>
-    /// Carrega o agregado completo, incluindo <see cref="GrupoEstudo.Membros"/> e
-    /// <see cref="GrupoEstudo.Topicos"/>. Isso é obrigatório para que as regras do agregado
-    /// (convite duplicado, permissões e conclusão de tópicos) possam ser avaliadas.
+    /// Carrega o agregado completo, incluindo <see cref="GrupoEstudo.Membros"/>,
+    /// <see cref="GrupoEstudo.Colunas"/> e <see cref="GrupoEstudo.Topicos"/>. Isso é obrigatório
+    /// para que as regras do agregado (convite duplicado, permissões, colunas e movimentação de cards)
+    /// possam ser avaliadas.
     /// </summary>
     Task<GrupoEstudo?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Carrega o agregado completo que contém o tópico informado, permitindo validar
+    /// permissões ao mover um card sem depender do id do grupo na rota.
+    /// </summary>
+    Task<GrupoEstudo?> ObterPorTopicoIdAsync(Guid topicoId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Lista os grupos criados por um usuário.

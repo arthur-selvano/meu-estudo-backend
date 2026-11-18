@@ -3,7 +3,7 @@ using MeuEstudos.Application.DTOs;
 namespace MeuEstudos.Application.Interfaces;
 
 /// <summary>
-/// Casos de uso de grupos de estudo, convites e tópicos.
+/// Casos de uso de grupos de estudo, convites e tópicos/cards do Kanban.
 /// </summary>
 public interface IGrupoEstudoService
 {
@@ -14,6 +14,11 @@ public interface IGrupoEstudoService
 
     Task<IReadOnlyCollection<GrupoEstudoResponse>> ListarDoUsuarioAsync(
         Guid usuarioId,
+        CancellationToken cancellationToken = default);
+
+    Task<GrupoEstudoResponse> ObterDetalhesAsync(
+        Guid usuarioId,
+        Guid grupoId,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<ConvitePendenteResponse>> ListarConvitesPendentesAsync(
@@ -42,5 +47,11 @@ public interface IGrupoEstudoService
         Guid usuarioId,
         Guid grupoId,
         Guid topicoId,
+        CancellationToken cancellationToken = default);
+
+    Task<TopicoEstudoResponse> MoverTopicoAsync(
+        Guid usuarioId,
+        Guid topicoId,
+        MoverTopicoRequest request,
         CancellationToken cancellationToken = default);
 }

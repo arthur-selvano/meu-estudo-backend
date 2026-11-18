@@ -16,6 +16,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<GrupoEstudo> GruposEstudo => Set<GrupoEstudo>();
     public DbSet<MembroGrupo> MembrosGrupo => Set<MembroGrupo>();
+    public DbSet<ColunaKanban> ColunasKanban => Set<ColunaKanban>();
     public DbSet<TopicoEstudo> TopicosEstudo => Set<TopicoEstudo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

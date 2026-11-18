@@ -4,24 +4,39 @@ using MeuEstudos.Domain.Exceptions;
 namespace MeuEstudos.Domain.Entities;
 
 /// <summary>
-/// Raiz de agregado que representa um grupo de estudo.
-/// Todas as alterações em <see cref="MembroGrupo"/> e <see cref="TopicoEstudo"/> devem passar por esta classe,
-/// que concentra as regras de permissão e consistência do grupo.
+/// Raiz de agregado que representa um quadro de estudos (pessoal ou acadêmico).
+/// Todas as alterações em <see cref="MembroGrupo"/>, <see cref="ColunaKanban"/> e <see cref="TopicoEstudo"/>
+/// devem passar por esta classe, que concentra as regras de permissão e consistência do grupo.
 /// </summary>
 public class GrupoEstudo
 {
     private const int TituloMaxLength = 150;
 
+    /// <summary>
+    /// Colunas criadas automaticamente em todo quadro, na ordem em que aparecem no Kanban.
+    /// A última coluna representa a conclusão do card.
+    /// </summary>
+    private static readonly (string Titulo, int Ordem)[] ColunasPadrao =
+    [
+        ("A Fazer", 0),
+        ("Em Andamento", 1),
+        ("Revisão", 2),
+        ("Concluído", 3)
+    ];
+
     private readonly List<MembroGrupo> _membros = new();
+    private readonly List<ColunaKanban> _colunas = new();
     private readonly List<TopicoEstudo> _topicos = new();
 
     public Guid Id { get; private set; }
     public string Titulo { get; private set; } = string.Empty;
     public string? Descricao { get; private set; }
+    public TipoGrupo Tipo { get; private set; }
     public Guid DonoId { get; private set; }
     public DateTime CriadoEm { get; private set; }
 
     public IReadOnlyCollection<MembroGrupo> Membros => _membros.AsReadOnly();
+    public IReadOnlyCollection<ColunaKanban> Colunas => _colunas.AsReadOnly();
     public IReadOnlyCollection<TopicoEstudo> Topicos => _topicos.AsReadOnly();
 
     /// <summary>
@@ -31,20 +46,26 @@ public class GrupoEstudo
     {
     }
 
-    public GrupoEstudo(string titulo, string? descricao, Guid donoId)
+    public GrupoEstudo(string titulo, string? descricao, TipoGrupo tipo, Guid donoId)
     {
         if (donoId == Guid.Empty)
             throw new DomainException("O dono do grupo é obrigatório.");
 
+        if (!Enum.IsDefined(tipo))
+            throw new DomainException("O tipo do grupo é inválido.");
+
         Id = Guid.NewGuid();
         DefinirTitulo(titulo);
         Descricao = string.IsNullOrWhiteSpace(descricao) ? null : descricao.Trim();
+        Tipo = tipo;
         DonoId = donoId;
         CriadoEm = DateTime.UtcNow;
+
+        CriarColunasPadrao();
     }
 
     /// <summary>
-    /// Altera título e descrição do grupo. Permitido apenas para o dono.
+    /// Alterar título e descrição do grupo. Permitido apenas para o dono.
     /// </summary>
     public void AlterarDetalhes(Guid solicitanteId, string titulo, string? descricao)
     {
@@ -64,8 +85,9 @@ public class GrupoEstudo
     public MembroGrupo ConvidarMembro(Guid usuarioId) => ConvidarMembro(DonoId, usuarioId);
 
     /// <summary>
-    /// Convida um usuário para o grupo. Apenas o dono pode convidar, não é possível convidar a si mesmo
-    /// nem criar um segundo vínculo para alguém que já foi convidado (independentemente do status).
+    /// Convida um usuário para o grupo. Apenas o dono pode convidar, quadros pessoais não aceitam
+    /// convidados, não é possível convidar a si mesmo nem criar um segundo vínculo para alguém
+    /// que já foi convidado (independentemente do status).
     /// </summary>
     /// <param name="solicitanteId">Usuário que está executando a ação; precisa ser o dono do grupo.</param>
     /// <param name="usuarioId">Usuário que receberá o convite.</param>
@@ -73,6 +95,7 @@ public class GrupoEstudo
     public MembroGrupo ConvidarMembro(Guid solicitanteId, Guid usuarioId)
     {
         GarantirQueEhDono(solicitanteId);
+        GarantirConvitePermitido();
 
         if (usuarioId == Guid.Empty)
             throw new DomainException("O usuário a ser convidado é obrigatório.");
@@ -106,17 +129,43 @@ public class GrupoEstudo
     }
 
     /// <summary>
-    /// Adiciona um tópico de estudo ao grupo. Permitido apenas para o dono ou para membros com convite aceito.
+    /// Adiciona um card ao quadro, na coluna informada e no fim da fila dessa coluna.
+    /// Permitido apenas para o dono ou para membros com convite aceito.
+    /// O responsável, quando informado, também deve ser o dono ou um membro aceito.
     /// </summary>
     public TopicoEstudo AdicionarTopico(
         Guid usuarioId,
+        Guid colunaId,
         string titulo,
         string? descricao = null,
+        Guid? responsavelId = null,
+        PrioridadeTopico prioridade = PrioridadeTopico.Media,
         DateOnly? dataPrevista = null)
     {
         GarantirParticipacao(usuarioId);
 
-        var topico = new TopicoEstudo(Id, usuarioId, titulo, descricao, dataPrevista);
+        var coluna = _colunas.SingleOrDefault(c => c.Id == colunaId)
+                     ?? throw new DomainException("Coluna não encontrada neste grupo.");
+
+        GarantirResponsavelValido(responsavelId);
+
+        var ordem = _topicos
+            .Where(t => t.ColunaId == coluna.Id)
+            .Select(t => t.Ordem)
+            .DefaultIfEmpty(-1)
+            .Max() + 1;
+
+        var topico = new TopicoEstudo(
+            Id,
+            coluna.Id,
+            usuarioId,
+            titulo,
+            descricao,
+            responsavelId,
+            prioridade,
+            ordem,
+            dataPrevista);
+
         _topicos.Add(topico);
 
         return topico;
@@ -129,12 +178,62 @@ public class GrupoEstudo
     {
         GarantirParticipacao(usuarioId);
 
-        var topico = _topicos.SingleOrDefault(t => t.Id == topicoId)
-                     ?? throw new DomainException("Tópico não encontrado neste grupo.");
+        var topico = ObterTopico(topicoId);
 
         topico.AlternarConclusao();
 
         return topico;
+    }
+
+    /// <summary>
+    /// Move um card para a coluna e a posição informadas. O card é marcado como concluído
+    /// quando a coluna de destino é a última do quadro (e desmarcado ao sair dela).
+    /// Permitido apenas para o dono ou para membros com convite aceito.
+    /// </summary>
+    public TopicoEstudo MoverTopico(Guid usuarioId, Guid topicoId, Guid colunaId, int ordem)
+    {
+        GarantirParticipacao(usuarioId);
+
+        var topico = ObterTopico(topicoId);
+
+        if (colunaId == Guid.Empty)
+            throw new DomainException("A coluna de destino é obrigatória.");
+
+        var colunaDestino = _colunas.SingleOrDefault(c => c.Id == colunaId)
+                            ?? throw new DomainException("Coluna de destino não encontrada neste grupo.");
+
+        var ultimaColuna = _colunas.Max(c => c.Ordem);
+
+        topico.MoverPara(colunaDestino.Id, ordem, concluido: colunaDestino.Ordem == ultimaColuna);
+
+        return topico;
+    }
+
+    private TopicoEstudo ObterTopico(Guid topicoId)
+        => _topicos.SingleOrDefault(t => t.Id == topicoId)
+           ?? throw new DomainException("Tópico não encontrado neste grupo.");
+
+    private void CriarColunasPadrao()
+    {
+        foreach (var (titulo, ordem) in ColunasPadrao)
+            _colunas.Add(new ColunaKanban(Id, titulo, ordem));
+    }
+
+    private void GarantirResponsavelValido(Guid? responsavelId)
+    {
+        if (responsavelId is null)
+            return;
+
+        if (responsavelId == Guid.Empty)
+            throw new DomainException("O responsável informado é inválido.");
+
+        if (responsavelId == DonoId)
+            return;
+
+        var membro = _membros.SingleOrDefault(m => m.UsuarioId == responsavelId);
+
+        if (membro is null || !membro.EhMembroAceito())
+            throw new DomainException("O responsável deve ser o dono ou um membro com convite aceito do grupo.");
     }
 
     private void DefinirTitulo(string titulo)
@@ -160,7 +259,20 @@ public class GrupoEstudo
             throw new DomainException("Apenas o dono do grupo pode executar esta ação.");
     }
 
-    private void GarantirParticipacao(Guid usuarioId)
+    /// <summary>
+    /// Garante que o tipo do grupo aceita convidados. Quadros pessoais são exclusivos do dono.
+    /// Exposto para que a aplicação rejeite o convite antes de consultar o e-mail do convidado.
+    /// </summary>
+    public void GarantirConvitePermitido()
+    {
+        if (Tipo == TipoGrupo.Pessoal)
+            throw new DomainException("Quadros pessoais não permitem convidar outros membros.");
+    }
+
+    /// <summary>
+    /// Garante que o solicitante é o dono ou um membro com convite aceito.
+    /// </summary>
+    public void GarantirParticipacao(Guid usuarioId)
     {
         if (usuarioId == DonoId)
             return;

@@ -1,4 +1,5 @@
 using MeuEstudos.Domain.Entities;
+using MeuEstudos.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,9 +20,16 @@ public sealed class TopicoEstudoConfiguration : IEntityTypeConfiguration<TopicoE
             .HasColumnName("grupo_id")
             .IsRequired();
 
+        builder.Property(t => t.ColunaId)
+            .HasColumnName("coluna_id")
+            .IsRequired();
+
         builder.Property(t => t.CriadoPorId)
             .HasColumnName("criado_por_id")
             .IsRequired();
+
+        builder.Property(t => t.ResponsavelId)
+            .HasColumnName("responsavel_id");
 
         builder.Property(t => t.Titulo)
             .HasColumnName("titulo")
@@ -31,6 +39,19 @@ public sealed class TopicoEstudoConfiguration : IEntityTypeConfiguration<TopicoE
         builder.Property(t => t.Descricao)
             .HasColumnName("descricao")
             .HasColumnType("text");
+
+        // O banco armazena valores em caixa alta ('BAIXA' | 'MEDIA' | 'ALTA').
+        builder.Property(t => t.Prioridade)
+            .HasColumnName("prioridade")
+            .HasConversion(
+                prioridade => prioridade.ParaValorBanco(),
+                valor => PrioridadeTopicoExtensions.DeValorBanco(valor))
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(t => t.Ordem)
+            .HasColumnName("ordem")
+            .IsRequired();
 
         builder.Property(t => t.DataPrevista)
             .HasColumnName("data_prevista")
@@ -52,9 +73,31 @@ public sealed class TopicoEstudoConfiguration : IEntityTypeConfiguration<TopicoE
             .HasConstraintName("fk_topico_criador")
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Relação com colunas_kanban(id): coluna do card (ON DELETE CASCADE no init.sql).
+        builder.HasOne<ColunaKanban>()
+            .WithMany()
+            .HasForeignKey(t => t.ColunaId)
+            .HasConstraintName("fk_topico_coluna")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Relação com usuarios(id): responsável pelo card (ON DELETE SET NULL no init.sql).
+        builder.HasOne<Usuario>()
+            .WithMany()
+            .HasForeignKey(t => t.ResponsavelId)
+            .HasConstraintName("fk_topico_responsavel")
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Equivale ao idx_topicos_grupo.
         builder.HasIndex(t => t.GrupoId)
             .HasDatabaseName("idx_topicos_grupo");
+
+        // Equivale ao idx_topicos_coluna_ordem.
+        builder.HasIndex(t => new { t.ColunaId, t.Ordem })
+            .HasDatabaseName("idx_topicos_coluna_ordem");
+
+        // Equivale ao idx_topicos_responsavel.
+        builder.HasIndex(t => t.ResponsavelId)
+            .HasDatabaseName("idx_topicos_responsavel");
 
         // A relação com grupos_estudo(id) é configurada em GrupoEstudoConfiguration,
         // pois é necessária para a navegação Topicos com acesso por backing field.

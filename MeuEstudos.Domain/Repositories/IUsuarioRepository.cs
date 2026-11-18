@@ -18,6 +18,14 @@ public interface IUsuarioRepository
         IEnumerable<Guid> ids,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Busca os dados públicos (nome e foto) dos usuários correspondentes aos ids informados.
+    /// Ids desconhecidos são omitidos.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, UsuarioResumo>> ObterResumosPorIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExisteEmailAsync(string email, CancellationToken cancellationToken = default);
 
     Task AdicionarAsync(Usuario usuario, CancellationToken cancellationToken = default);

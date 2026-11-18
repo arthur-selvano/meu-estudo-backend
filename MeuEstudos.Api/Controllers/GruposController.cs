@@ -31,6 +31,18 @@ public sealed class GruposController : ControllerBase
         return Ok(grupo);
     }
 
+    /// <summary>Detalha um grupo, incluindo as colunas do Kanban com seus cards.</summary>
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType<GrupoEstudoResponse>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<GrupoEstudoResponse>> ObterDetalhes(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        var grupo = await _grupoEstudoService.ObterDetalhesAsync(ObterUsuarioId(), id, cancellationToken);
+
+        return Ok(grupo);
+    }
+
     /// <summary>Lista os grupos em que o usuário é dono ou membro aceito.</summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyCollection<GrupoEstudoResponse>>> ListarMeusGrupos(
@@ -77,7 +89,7 @@ public sealed class GruposController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Adiciona um tópico de estudo ao grupo.</summary>
+    /// <summary>Adiciona um card/tópico na coluna informada do grupo.</summary>
     [HttpPost("{id:guid}/topicos")]
     [ProducesResponseType<TopicoEstudoResponse>(StatusCodes.Status201Created)]
     public async Task<ActionResult<TopicoEstudoResponse>> AdicionarTopico(
