@@ -19,14 +19,29 @@ public sealed class UsuarioRepository : IUsuarioRepository
 
     public Task<Usuario?> ObterPorEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        var emailNormalizado = NormalizarEmail(email);
+        var emailNormalizado = Usuario.NormalizarEmail(email);
 
         return _context.Usuarios.FirstOrDefaultAsync(u => u.Email == emailNormalizado, cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, string>> ObterNomesPorIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        var idsDistintos = ids.Distinct().ToArray();
+
+        if (idsDistintos.Length == 0)
+            return new Dictionary<Guid, string>();
+
+        return await _context.Usuarios
+            .AsNoTracking()
+            .Where(usuario => idsDistintos.Contains(usuario.Id))
+            .ToDictionaryAsync(usuario => usuario.Id, usuario => usuario.Nome, cancellationToken);
+    }
+
     public Task<bool> ExisteEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        var emailNormalizado = NormalizarEmail(email);
+        var emailNormalizado = Usuario.NormalizarEmail(email);
 
         return _context.Usuarios.AnyAsync(u => u.Email == emailNormalizado, cancellationToken);
     }
@@ -44,7 +59,4 @@ public sealed class UsuarioRepository : IUsuarioRepository
 
         await _context.SaveChangesAsync(cancellationToken);
     }
-
-    // Mesma normalização aplicada por Usuario ao definir o e-mail.
-    private static string NormalizarEmail(string email) => email.Trim().ToLowerInvariant();
 }

@@ -6,5 +6,7 @@ public sealed record GrupoEstudoResponse(
     string Titulo,
     string? Descricao,
     Guid DonoId,
+    string DonoNome,
     DateTime CriadoEm,
+    IReadOnlyCollection<MembroGrupoResponse> Membros,
     IReadOnlyCollection<TopicoEstudoResponse> Topicos);

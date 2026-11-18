@@ -125,7 +125,7 @@ public class GrupoEstudo
     /// <summary>
     /// Inverte a conclusão de um tópico. Permitido apenas para o dono ou para membros com convite aceito.
     /// </summary>
-    public void AlternarConclusaoTopico(Guid topicoId, Guid usuarioId)
+    public TopicoEstudo AlternarConclusaoTopico(Guid topicoId, Guid usuarioId)
     {
         GarantirParticipacao(usuarioId);
 
@@ -133,6 +133,8 @@ public class GrupoEstudo
                      ?? throw new DomainException("Tópico não encontrado neste grupo.");
 
         topico.AlternarConclusao();
+
+        return topico;
     }
 
     private void DefinirTitulo(string titulo)
@@ -148,7 +150,11 @@ public class GrupoEstudo
         Titulo = tituloNormalizado;
     }
 
-    private void GarantirQueEhDono(Guid usuarioId)
+    /// <summary>
+    /// Garante que o solicitante é o dono do grupo. Exposto para que a camada de
+    /// aplicação possa anteceder validações que não devem rodar para não-donos.
+    /// </summary>
+    public void GarantirQueEhDono(Guid usuarioId)
     {
         if (usuarioId != DonoId)
             throw new DomainException("Apenas o dono do grupo pode executar esta ação.");
@@ -161,7 +167,7 @@ public class GrupoEstudo
 
         var membro = _membros.SingleOrDefault(m => m.UsuarioId == usuarioId);
 
-        if (membro is null || membro.Status != StatusMembro.Aceito)
+        if (membro is null || !membro.EhMembroAceito())
             throw new DomainException("Apenas o dono ou membros com convite aceito podem executar esta ação.");
     }
 }

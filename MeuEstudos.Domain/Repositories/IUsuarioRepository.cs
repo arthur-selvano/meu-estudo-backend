@@ -11,6 +11,13 @@ public interface IUsuarioRepository
 
     Task<Usuario?> ObterPorEmailAsync(string email, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Busca os nomes dos usuários correspondentes aos ids informados. Ids desconhecidos são omitidos.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, string>> ObterNomesPorIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExisteEmailAsync(string email, CancellationToken cancellationToken = default);
 
     Task AdicionarAsync(Usuario usuario, CancellationToken cancellationToken = default);

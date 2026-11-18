@@ -56,13 +56,15 @@ public class Usuario
         Nome = nomeNormalizado;
     }
 
+    /// <summary>Normaliza o e-mail (trim + minúsculas) para armazenamento e busca.</summary>
+    public static string NormalizarEmail(string email) => email.Trim().ToLowerInvariant();
+
     private void DefinirEmail(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
             throw new DomainException("O e-mail do usuário é obrigatório.");
 
-        // Normaliza para evitar duplicidade por diferença de caixa/espaços.
-        var emailNormalizado = email.Trim().ToLowerInvariant();
+        var emailNormalizado = NormalizarEmail(email);
 
         if (emailNormalizado.Length > EmailMaxLength)
             throw new DomainException($"O e-mail do usuário deve ter no máximo {EmailMaxLength} caracteres.");

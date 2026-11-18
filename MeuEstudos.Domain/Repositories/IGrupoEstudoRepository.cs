@@ -24,6 +24,14 @@ public interface IGrupoEstudoRepository
     /// </summary>
     Task<IReadOnlyCollection<GrupoEstudo>> ObterDoUsuarioAsync(Guid usuarioId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Lista os grupos em que o usuário possui convite com status <c>Pendente</c>,
+    /// carregando os membros necessários para compor a resposta do convite.
+    /// </summary>
+    Task<IReadOnlyCollection<GrupoEstudo>> ObterComConvitePendenteAsync(
+        Guid usuarioId,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExisteAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task AdicionarAsync(GrupoEstudo grupo, CancellationToken cancellationToken = default);

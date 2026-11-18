@@ -5,4 +5,5 @@ public sealed record ConvitePendenteResponse(
     Guid GrupoId,
     string GrupoTitulo,
     Guid DonoId,
+    string DonoNome,
     DateTime ConvidadoEm);

@@ -33,7 +33,11 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
 
         await _grupoEstudoRepository.AdicionarAsync(grupo, cancellationToken);
 
-        return MapearGrupo(grupo);
+        var nomes = await _usuarioRepository.ObterNomesPorIdsAsync(
+            new[] { grupo.DonoId },
+            cancellationToken);
+
+        return MapearGrupo(grupo, nomes, usuarioId);
     }
 
     public async Task<IReadOnlyCollection<GrupoEstudoResponse>> ListarDoUsuarioAsync(
@@ -42,7 +46,14 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
     {
         var grupos = await _grupoEstudoRepository.ObterDoUsuarioAsync(usuarioId, cancellationToken);
 
-        return grupos.Select(MapearGrupo).ToList();
+        var nomes = await _usuarioRepository.ObterNomesPorIdsAsync(
+            grupos.SelectMany(grupo =>
+                MembrosVisiveis(grupo, usuarioId)
+                    .Select(membro => membro.UsuarioId)
+                    .Append(grupo.DonoId)),
+            cancellationToken);
+
+        return grupos.Select(grupo => MapearGrupo(grupo, nomes, usuarioId)).ToList();
     }
 
     public async Task<IReadOnlyCollection<ConvitePendenteResponse>> ListarConvitesPendentesAsync(
@@ -50,6 +61,10 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
         CancellationToken cancellationToken = default)
     {
         var grupos = await _grupoEstudoRepository.ObterComConvitePendenteAsync(usuarioId, cancellationToken);
+
+        var nomes = await _usuarioRepository.ObterNomesPorIdsAsync(
+            grupos.Select(grupo => grupo.DonoId),
+            cancellationToken);
 
         return grupos
             .Select(grupo =>
@@ -61,6 +76,7 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
                     grupo.Id,
                     grupo.Titulo,
                     grupo.DonoId,
+                    nomes.GetValueOrDefault(grupo.DonoId, string.Empty),
                     convite.ConvidadoEm);
             })
             .ToList();
@@ -79,11 +95,15 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
 
         var grupo = await ObterGrupoAsync(grupoId, cancellationToken);
 
+        // Antes de consultar o e-mail, garante que o solicitante é o dono: assim um
+        // não-dono não consegue descobrir se um e-mail está cadastrado pela mensagem.
+        grupo.GarantirQueEhDono(usuarioId);
+
         var convidado = await _usuarioRepository.ObterPorEmailAsync(request.Email, cancellationToken)
             ?? throw new DomainException("Usuário não encontrado para o e-mail informado.");
 
-        // O overload com solicitante mantém a verificação de "somente o dono convida" no domínio.
-        grupo.ConvidarMembro(usuarioId, convidado.Id);
+        // O overload sem solicitante assume que a checagem de dono já foi feita acima.
+        grupo.ConvidarMembro(convidado.Id);
 
         await _grupoEstudoRepository.AtualizarAsync(grupo, cancellationToken);
     }
@@ -132,11 +152,9 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
     {
         var grupo = await ObterGrupoAsync(grupoId, cancellationToken);
 
-        grupo.AlternarConclusaoTopico(topicoId, usuarioId);
+        var topico = grupo.AlternarConclusaoTopico(topicoId, usuarioId);
 
         await _grupoEstudoRepository.AtualizarAsync(grupo, cancellationToken);
-
-        var topico = grupo.Topicos.Single(t => t.Id == topicoId);
 
         return MapearTopico(topico);
     }
@@ -145,14 +163,32 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
         => await _grupoEstudoRepository.ObterPorIdAsync(grupoId, cancellationToken)
            ?? throw new KeyNotFoundException("Grupo de estudo não encontrado.");
 
-    private static GrupoEstudoResponse MapearGrupo(GrupoEstudo grupo)
-        => new(
+    private static IEnumerable<MembroGrupo> MembrosVisiveis(GrupoEstudo grupo, Guid solicitanteId)
+        => grupo.Membros.Where(membro =>
+            solicitanteId == grupo.DonoId || membro.EhMembroAceito());
+
+    private static GrupoEstudoResponse MapearGrupo(
+        GrupoEstudo grupo,
+        IReadOnlyDictionary<Guid, string> nomes,
+        Guid solicitanteId)
+    {
+        var membros = MembrosVisiveis(grupo, solicitanteId)
+            .Select(membro => new MembroGrupoResponse(
+                membro.UsuarioId,
+                nomes.GetValueOrDefault(membro.UsuarioId, string.Empty),
+                membro.Status.ToString()))
+            .ToList();
+
+        return new(
             grupo.Id,
             grupo.Titulo,
             grupo.Descricao,
             grupo.DonoId,
+            nomes.GetValueOrDefault(grupo.DonoId, string.Empty),
             grupo.CriadoEm,
+            membros,
             grupo.Topicos.Select(MapearTopico).ToList());
+    }
 
     private static TopicoEstudoResponse MapearTopico(TopicoEstudo topico)
         => new(
