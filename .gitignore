@@ -486,6 +486,7 @@ $RECYCLE.BIN/
 .claude/
 .agents/
 skills-lock.json
+docs/
 
 # Uploads de fotos de perfil
 MeuEstudos.Api/wwwroot/uploads/
