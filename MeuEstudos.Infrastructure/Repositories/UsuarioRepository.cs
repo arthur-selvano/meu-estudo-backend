@@ -1,0 +1,50 @@
+using MeuEstudos.Domain.Entities;
+using MeuEstudos.Domain.Repositories;
+using MeuEstudos.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace MeuEstudos.Infrastructure.Repositories;
+
+public sealed class UsuarioRepository : IUsuarioRepository
+{
+    private readonly AppDbContext _context;
+
+    public UsuarioRepository(AppDbContext context)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+    }
+
+    public Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default)
+        => _context.Usuarios.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+
+    public Task<Usuario?> ObterPorEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var emailNormalizado = NormalizarEmail(email);
+
+        return _context.Usuarios.FirstOrDefaultAsync(u => u.Email == emailNormalizado, cancellationToken);
+    }
+
+    public Task<bool> ExisteEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var emailNormalizado = NormalizarEmail(email);
+
+        return _context.Usuarios.AnyAsync(u => u.Email == emailNormalizado, cancellationToken);
+    }
+
+    public async Task AdicionarAsync(Usuario usuario, CancellationToken cancellationToken = default)
+    {
+        await _context.Usuarios.AddAsync(usuario, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task AtualizarAsync(Usuario usuario, CancellationToken cancellationToken = default)
+    {
+        if (_context.Entry(usuario).State == EntityState.Detached)
+            _context.Usuarios.Update(usuario);
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    // Mesma normalização aplicada por Usuario ao definir o e-mail.
+    private static string NormalizarEmail(string email) => email.Trim().ToLowerInvariant();
+}
