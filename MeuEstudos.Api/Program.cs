@@ -1,8 +1,11 @@
 using System.Text;
+using MeuEstudos.Api.Hubs;
 using MeuEstudos.Api.Middlewares;
+using MeuEstudos.Api.Notifications;
 using MeuEstudos.Api.Services;
 using MeuEstudos.Api.Settings;
 using MeuEstudos.Application;
+using MeuEstudos.Application.Interfaces;
 using MeuEstudos.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
@@ -11,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -20,6 +24,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IFotoPerfilService, FotoPerfilService>();
+builder.Services.AddScoped<IQuadroNotificador, QuadroNotificador>();
 
 var jwtSettings = builder.Configuration
     .GetSection(JwtSettings.SectionName)
@@ -40,6 +45,22 @@ builder.Services
     {
         // Mantém o mapeamento dos claims curtos do JWT para ClaimTypes.*.
         options.MapInboundClaims = true;
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // O browser não permite header Authorization no WebSocket do SignalR.
+                var accessToken = context.Request.Query["access_token"];
+
+                if (!string.IsNullOrEmpty(accessToken)
+                    && context.HttpContext.Request.Path.StartsWithSegments("/hubs/quadro"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -61,7 +82,8 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .AllowCredentials());
 });
 
 // O diretório precisa existir no startup para o middleware de arquivos estáticos
@@ -93,5 +115,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<QuadroHub>("/hubs/quadro");
 
 app.Run();

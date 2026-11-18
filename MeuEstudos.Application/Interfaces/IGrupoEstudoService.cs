@@ -54,4 +54,10 @@ public interface IGrupoEstudoService
         Guid topicoId,
         MoverTopicoRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<TopicoEstudoResponse> AlterarResponsavelTopicoAsync(
+        Guid usuarioId,
+        Guid topicoId,
+        AlterarResponsavelTopicoRequest request,
+        CancellationToken cancellationToken = default);
 }

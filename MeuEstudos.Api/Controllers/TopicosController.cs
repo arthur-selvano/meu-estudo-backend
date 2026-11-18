@@ -40,6 +40,26 @@ public sealed class TopicosController : ControllerBase
     }
 
     /// <summary>
+    /// Define ou remove o responsável pelo card. <c>responsavelId</c> nulo remove a atribuição;
+    /// quando informado, deve ser o dono ou um membro com convite aceito do grupo.
+    /// </summary>
+    [HttpPatch("{id:guid}/responsavel")]
+    [ProducesResponseType<TopicoEstudoResponse>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<TopicoEstudoResponse>> AlterarResponsavel(
+        [FromRoute] Guid id,
+        [FromBody] AlterarResponsavelTopicoRequest request,
+        CancellationToken cancellationToken)
+    {
+        var topico = await _grupoEstudoService.AlterarResponsavelTopicoAsync(
+            ObterUsuarioId(),
+            id,
+            request,
+            cancellationToken);
+
+        return Ok(topico);
+    }
+
+    /// <summary>
     /// Identidade do usuário vem exclusivamente do token JWT, nunca do corpo da requisição.
     /// </summary>
     private Guid ObterUsuarioId()

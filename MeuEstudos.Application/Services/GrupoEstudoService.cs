@@ -11,15 +11,19 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
 {
     private readonly IGrupoEstudoRepository _grupoEstudoRepository;
     private readonly IUsuarioRepository _usuarioRepository;
+    private readonly IQuadroNotificador _quadroNotificador;
 
     public GrupoEstudoService(
         IGrupoEstudoRepository grupoEstudoRepository,
-        IUsuarioRepository usuarioRepository)
+        IUsuarioRepository usuarioRepository,
+        IQuadroNotificador quadroNotificador)
     {
         _grupoEstudoRepository = grupoEstudoRepository
             ?? throw new ArgumentNullException(nameof(grupoEstudoRepository));
         _usuarioRepository = usuarioRepository
             ?? throw new ArgumentNullException(nameof(usuarioRepository));
+        _quadroNotificador = quadroNotificador
+            ?? throw new ArgumentNullException(nameof(quadroNotificador));
     }
 
     public async Task<GrupoEstudoResponse> CriarAsync(
@@ -160,8 +164,15 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
         await _grupoEstudoRepository.AtualizarAsync(grupo, cancellationToken);
 
         var usuarios = await ObterResumosDoResponsavelAsync(topico, cancellationToken);
+        var resposta = MapearTopico(topico, usuarios);
 
-        return MapearTopico(topico, usuarios);
+        await _quadroNotificador.TopicoAtualizadoAsync(
+            grupo.Id,
+            DestinatariosDoQuadro(grupo),
+            resposta,
+            cancellationToken);
+
+        return resposta;
     }
 
     public async Task<TopicoEstudoResponse> AlternarConclusaoTopicoAsync(
@@ -177,8 +188,15 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
         await _grupoEstudoRepository.AtualizarAsync(grupo, cancellationToken);
 
         var usuarios = await ObterResumosDoResponsavelAsync(topico, cancellationToken);
+        var resposta = MapearTopico(topico, usuarios);
 
-        return MapearTopico(topico, usuarios);
+        await _quadroNotificador.TopicoAtualizadoAsync(
+            grupo.Id,
+            DestinatariosDoQuadro(grupo),
+            resposta,
+            cancellationToken);
+
+        return resposta;
     }
 
     public async Task<TopicoEstudoResponse> MoverTopicoAsync(
@@ -197,9 +215,51 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
         await _grupoEstudoRepository.AtualizarAsync(grupo, cancellationToken);
 
         var usuarios = await ObterResumosDoResponsavelAsync(topico, cancellationToken);
+        var resposta = MapearTopico(topico, usuarios);
 
-        return MapearTopico(topico, usuarios);
+        await _quadroNotificador.TopicoAtualizadoAsync(
+            grupo.Id,
+            DestinatariosDoQuadro(grupo),
+            resposta,
+            cancellationToken);
+
+        return resposta;
     }
+
+    public async Task<TopicoEstudoResponse> AlterarResponsavelTopicoAsync(
+        Guid usuarioId,
+        Guid topicoId,
+        AlterarResponsavelTopicoRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var grupo = await _grupoEstudoRepository.ObterPorTopicoIdAsync(topicoId, cancellationToken)
+                    ?? throw new KeyNotFoundException("Tópico não encontrado.");
+
+        var topico = grupo.AlterarResponsavelTopico(usuarioId, topicoId, request.ResponsavelId);
+
+        await _grupoEstudoRepository.AtualizarAsync(grupo, cancellationToken);
+
+        var usuarios = await ObterResumosDoResponsavelAsync(topico, cancellationToken);
+        var resposta = MapearTopico(topico, usuarios);
+
+        await _quadroNotificador.TopicoAtualizadoAsync(
+            grupo.Id,
+            DestinatariosDoQuadro(grupo),
+            resposta,
+            cancellationToken);
+
+        return resposta;
+    }
+
+    private static IReadOnlyCollection<Guid> DestinatariosDoQuadro(GrupoEstudo grupo)
+        => grupo.Membros
+            .Where(membro => membro.EhMembroAceito())
+            .Select(membro => membro.UsuarioId)
+            .Append(grupo.DonoId)
+            .Distinct()
+            .ToList();
 
     private async Task<GrupoEstudo> ObterGrupoAsync(Guid grupoId, CancellationToken cancellationToken)
         => await _grupoEstudoRepository.ObterPorIdAsync(grupoId, cancellationToken)
