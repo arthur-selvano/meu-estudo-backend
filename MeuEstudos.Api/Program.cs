@@ -1,21 +1,83 @@
+using System.Text;
+using MeuEstudos.Api.Middlewares;
+using MeuEstudos.Api.Services;
+using MeuEstudos.Api.Settings;
+using MeuEstudos.Application;
+using MeuEstudos.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddScoped<ITokenService, TokenService>();
+
+var jwtSettings = builder.Configuration
+    .GetSection(JwtSettings.SectionName)
+    .Get<JwtSettings>()
+    ?? throw new InvalidOperationException("A seção 'Jwt' não foi configurada.");
+
+if (string.IsNullOrWhiteSpace(jwtSettings.Key) || Encoding.UTF8.GetByteCount(jwtSettings.Key) < 32)
+    throw new InvalidOperationException("'Jwt:Key' deve ter pelo menos 32 caracteres.");
+
+if (string.IsNullOrWhiteSpace(jwtSettings.Issuer) || string.IsNullOrWhiteSpace(jwtSettings.Audience))
+    throw new InvalidOperationException("'Jwt:Issuer' e 'Jwt:Audience' devem ser configurados.");
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        // Mantém o mapeamento dos claims curtos do JWT para ClaimTypes.*.
+        options.MapInboundClaims = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendDev", policy =>
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+        options.SwaggerEndpoint("/openapi/v1.json", "MeuEstudos API v1"));
 }
 
 app.UseHttpsRedirection();
 
+app.UseCors("FrontendDev");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
