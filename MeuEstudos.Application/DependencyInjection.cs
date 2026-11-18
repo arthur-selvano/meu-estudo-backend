@@ -10,6 +10,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IGrupoEstudoService, GrupoEstudoService>();
+        services.AddScoped<IUsuarioService, UsuarioService>();
 
         // Sem estado e thread-safe: não há necessidade de criar uma instância por escopo.
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();

@@ -71,5 +71,5 @@ public sealed class AuthService : IAuthService
     }
 
     private static AuthResponse Mapear(Usuario usuario)
-        => new(usuario.Id, usuario.Nome, usuario.Email);
+        => new(usuario.Id, usuario.Nome, usuario.Email, usuario.FotoUrl);
 }

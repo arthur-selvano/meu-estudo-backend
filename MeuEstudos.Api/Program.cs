@@ -5,6 +5,7 @@ using MeuEstudos.Api.Settings;
 using MeuEstudos.Application;
 using MeuEstudos.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,7 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IFotoPerfilService, FotoPerfilService>();
 
 var jwtSettings = builder.Configuration
     .GetSection(JwtSettings.SectionName)
@@ -62,6 +64,11 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod());
 });
 
+// O diretório precisa existir no startup para o middleware de arquivos estáticos
+// enxergar arquivos gravados depois.
+var webRootPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+Directory.CreateDirectory(Path.Combine(webRootPath, "uploads", "perfis"));
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -74,6 +81,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(webRootPath)
+});
 
 app.UseCors("FrontendDev");
 

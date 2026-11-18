@@ -10,11 +10,24 @@ public class Usuario
     private const int NomeMaxLength = 120;
     private const int EmailMaxLength = 150;
     private const int SenhaHashMaxLength = 255;
+    private const int FotoUrlMaxLength = 500;
+    private const int BioMaxLength = 500;
+    private const int CursoOuAreaMaxLength = 120;
+    private const int InstituicaoMaxLength = 150;
+    private const int TopicoMaxLength = 40;
+    private const int MaxTopicos = 10;
+    private const string FotoUrlPrefix = "/uploads/perfis/";
 
     public Guid Id { get; private set; }
     public string Nome { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
     public string SenhaHash { get; private set; } = string.Empty;
+    public string? FotoUrl { get; private set; }
+    public string? Bio { get; private set; }
+    public string? CursoOuArea { get; private set; }
+    public string? Instituicao { get; private set; }
+    public List<string> TopicosInteresse { get; private set; } = [];
+    public List<string> TopicosAjuda { get; private set; } = [];
     public DateTime CriadoEm { get; private set; }
 
     /// <summary>
@@ -42,6 +55,46 @@ public class Usuario
     /// Substitui o hash da senha. O hash já deve vir calculado pela camada de aplicação/infraestrutura.
     /// </summary>
     public void AlterarSenhaHash(string senhaHash) => DefinirSenhaHash(senhaHash);
+
+    /// <summary>
+    /// Atualiza os dados públicos do perfil. Campos opcionais vazios são gravados como nulo.
+    /// </summary>
+    public void AtualizarPerfil(
+        string nome,
+        string? bio,
+        string? cursoOuArea,
+        string? instituicao,
+        IEnumerable<string>? topicosInteresse,
+        IEnumerable<string>? topicosAjuda)
+    {
+        DefinirNome(nome);
+
+        Bio = NormalizarOpcional(bio, BioMaxLength, "A biografia");
+        CursoOuArea = NormalizarOpcional(cursoOuArea, CursoOuAreaMaxLength, "O curso ou área");
+        Instituicao = NormalizarOpcional(instituicao, InstituicaoMaxLength, "A instituição");
+        TopicosInteresse = NormalizarTopicos(topicosInteresse);
+        TopicosAjuda = NormalizarTopicos(topicosAjuda);
+    }
+
+    /// <summary>
+    /// Define ou remove a foto de perfil. O caminho deve apontar para o diretório público de perfis.
+    /// </summary>
+    public void DefinirFotoUrl(string? fotoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(fotoUrl))
+        {
+            FotoUrl = null;
+            return;
+        }
+
+        var fotoNormalizada = fotoUrl.Trim();
+
+        if (fotoNormalizada.Length > FotoUrlMaxLength
+            || !fotoNormalizada.StartsWith(FotoUrlPrefix, StringComparison.Ordinal))
+            throw new DomainException("O caminho da foto de perfil é inválido.");
+
+        FotoUrl = fotoNormalizada;
+    }
 
     private void DefinirNome(string nome)
     {
@@ -84,6 +137,48 @@ public class Usuario
             throw new DomainException($"O hash da senha deve ter no máximo {SenhaHashMaxLength} caracteres.");
 
         SenhaHash = senhaHash;
+    }
+
+    private static string? NormalizarOpcional(string? valor, int maxLength, string nomeCampo)
+    {
+        if (string.IsNullOrWhiteSpace(valor))
+            return null;
+
+        var normalizado = valor.Trim();
+
+        if (normalizado.Length > maxLength)
+            throw new DomainException($"{nomeCampo} deve ter no máximo {maxLength} caracteres.");
+
+        return normalizado;
+    }
+
+    private static List<string> NormalizarTopicos(IEnumerable<string>? topicos)
+    {
+        if (topicos is null)
+            return [];
+
+        var normalizados = new List<string>();
+
+        foreach (var topico in topicos)
+        {
+            if (string.IsNullOrWhiteSpace(topico))
+                continue;
+
+            var normalizado = topico.Trim();
+
+            if (normalizado.Length > TopicoMaxLength)
+                throw new DomainException($"Cada tópico deve ter no máximo {TopicoMaxLength} caracteres.");
+
+            if (normalizados.Contains(normalizado, StringComparer.OrdinalIgnoreCase))
+                continue;
+
+            normalizados.Add(normalizado);
+        }
+
+        if (normalizados.Count > MaxTopicos)
+            throw new DomainException($"Informe no máximo {MaxTopicos} tópicos por lista.");
+
+        return normalizados;
     }
 
     private static bool EmailValido(string email)

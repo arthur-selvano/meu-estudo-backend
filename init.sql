@@ -7,6 +7,12 @@ CREATE TABLE usuarios (
     nome VARCHAR(120) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     senha_hash VARCHAR(255) NOT NULL,
+    foto_url VARCHAR(500),
+    bio VARCHAR(500),
+    curso_ou_area VARCHAR(120),
+    instituicao VARCHAR(150),
+    topicos_interesse TEXT[] NOT NULL DEFAULT '{}',
+    topicos_ajuda TEXT[] NOT NULL DEFAULT '{}',
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
