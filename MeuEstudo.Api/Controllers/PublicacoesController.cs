@@ -4,6 +4,7 @@ using MeuEstudo.Application.DTOs;
 using MeuEstudo.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace MeuEstudo.Api.Controllers;
 
@@ -44,8 +45,10 @@ public sealed class PublicacoesController : ControllerBase
     [HttpPost]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(LimiteAnexoBytes)]
+    [EnableRateLimiting("upload")]
     [ProducesResponseType<PublicacaoResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<PublicacaoResponse>> Criar(
         [FromForm] string? tipo,
         [FromForm] string? titulo,

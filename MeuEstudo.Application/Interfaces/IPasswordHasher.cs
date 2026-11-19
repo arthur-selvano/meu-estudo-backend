@@ -10,4 +10,10 @@ public interface IPasswordHasher
 
     /// <summary>Verifica se a senha corresponde ao hash armazenado.</summary>
     bool Verify(string senha, string hash);
+
+    /// <summary>
+    /// Indica se o hash foi gerado com parâmetros mais fracos/antigos e deve ser
+    /// substituído após um login bem-sucedido (aumento transparente de custo).
+    /// </summary>
+    bool PrecisaRehash(string hash);
 }

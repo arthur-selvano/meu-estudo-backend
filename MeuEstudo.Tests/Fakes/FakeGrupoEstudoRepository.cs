@@ -13,6 +13,7 @@ internal sealed class FakeGrupoEstudoRepository : IGrupoEstudoRepository
     }
 
     public int Atualizacoes { get; private set; }
+    public int Remocoes { get; private set; }
 
     public Task<GrupoEstudo?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default)
         => Task.FromResult(_grupos.GetValueOrDefault(id));
@@ -56,6 +57,7 @@ internal sealed class FakeGrupoEstudoRepository : IGrupoEstudoRepository
 
     public Task RemoverAsync(GrupoEstudo grupo, CancellationToken cancellationToken = default)
     {
+        Remocoes++;
         _grupos.Remove(grupo.Id);
         return Task.CompletedTask;
     }

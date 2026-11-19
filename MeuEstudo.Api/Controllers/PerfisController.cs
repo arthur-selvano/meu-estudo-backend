@@ -4,6 +4,7 @@ using MeuEstudo.Application.Interfaces;
 using MeuEstudo.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace MeuEstudo.Api.Controllers;
 
@@ -80,8 +81,10 @@ public sealed class PerfisController : ControllerBase
     [HttpPost("me/profile/foto")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(3 * 1024 * 1024)]
+    [EnableRateLimiting("upload")]
     [ProducesResponseType<FotoPerfilResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<FotoPerfilResponse>> EnviarFoto(
         [FromForm] IFormFile foto,
         CancellationToken cancellationToken)

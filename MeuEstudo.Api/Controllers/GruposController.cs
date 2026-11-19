@@ -3,6 +3,7 @@ using MeuEstudo.Application.DTOs;
 using MeuEstudo.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace MeuEstudo.Api.Controllers;
 
@@ -65,7 +66,9 @@ public sealed class GruposController : ControllerBase
 
     /// <summary>Convida um usuário, pelo e-mail, para participar do grupo.</summary>
     [HttpPost("{id:guid}/convites")]
+    [EnableRateLimiting("convite")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> ConvidarMembro(
         [FromRoute] Guid id,
         [FromBody] ConvidarMembroRequest request,

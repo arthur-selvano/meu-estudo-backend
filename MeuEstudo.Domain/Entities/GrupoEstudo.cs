@@ -11,6 +11,7 @@ namespace MeuEstudo.Domain.Entities;
 public class GrupoEstudo
 {
     private const int TituloMaxLength = 150;
+    private const int DescricaoMaxLength = 2000;
 
     /// <summary>
     /// Colunas criadas automaticamente em todo quadro, na ordem em que aparecem no Kanban.
@@ -56,7 +57,7 @@ public class GrupoEstudo
 
         Id = Guid.NewGuid();
         DefinirTitulo(titulo);
-        Descricao = string.IsNullOrWhiteSpace(descricao) ? null : descricao.Trim();
+        Descricao = NormalizarDescricao(descricao);
         Tipo = tipo;
         DonoId = donoId;
         CriadoEm = DateTime.UtcNow;
@@ -72,7 +73,7 @@ public class GrupoEstudo
         GarantirQueEhDono(solicitanteId);
 
         DefinirTitulo(titulo);
-        Descricao = string.IsNullOrWhiteSpace(descricao) ? null : descricao.Trim();
+        Descricao = NormalizarDescricao(descricao);
     }
 
     /// <summary>
@@ -296,6 +297,22 @@ public class GrupoEstudo
             throw new DomainException($"O título do grupo deve ter no máximo {TituloMaxLength} caracteres.");
 
         Titulo = tituloNormalizado;
+    }
+
+    private static string? NormalizarDescricao(string? descricao)
+    {
+        if (string.IsNullOrWhiteSpace(descricao))
+            return null;
+
+        var normalizada = descricao.Trim();
+
+        if (normalizada.Length > DescricaoMaxLength)
+        {
+            throw new DomainException(
+                $"A descrição do grupo deve ter no máximo {DescricaoMaxLength} caracteres.");
+        }
+
+        return normalizada;
     }
 
     /// <summary>

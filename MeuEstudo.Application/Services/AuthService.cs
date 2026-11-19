@@ -10,6 +10,7 @@ public sealed class AuthService : IAuthService
 {
     private const int SenhaMinLength = 8;
     private const int SenhaMaxLength = 128;
+    private const int EmailMaxLength = 150;
     private const string CredenciaisInvalidas = "E-mail ou senha inválidos.";
 
     private readonly IUsuarioRepository _usuarioRepository;
@@ -30,6 +31,9 @@ public sealed class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(request.Email))
             throw new DomainException("O e-mail do usuário é obrigatório.");
 
+        if (request.Email.Trim().Length > EmailMaxLength)
+            throw new DomainException("O e-mail informado é inválido.");
+
         ValidarSenha(request.Senha);
 
         if (await _usuarioRepository.ExisteEmailAsync(request.Email, cancellationToken))
@@ -48,15 +52,34 @@ public sealed class AuthService : IAuthService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Senha))
+        if (string.IsNullOrWhiteSpace(request.Email)
+            || string.IsNullOrWhiteSpace(request.Senha)
+            || request.Email.Trim().Length > EmailMaxLength
+            || request.Senha.Length > SenhaMaxLength)
+        {
             throw new DomainException(CredenciaisInvalidas);
+        }
 
         var usuario = await _usuarioRepository.ObterPorEmailAsync(request.Email, cancellationToken);
 
         // A mesma mensagem para e-mail inexistente e senha incorreta evita revelar
-        // quais e-mails estão cadastrados.
-        if (usuario is null || !_passwordHasher.Verify(request.Senha, usuario.SenhaHash))
+        // quais e-mails estão cadastrados. Quando o usuário não existe, executamos
+        // um hash descartável para que o tempo de resposta não denuncie a ausência.
+        if (usuario is null)
+        {
+            _passwordHasher.Hash(request.Senha);
             throw new DomainException(CredenciaisInvalidas);
+        }
+
+        if (!_passwordHasher.Verify(request.Senha, usuario.SenhaHash))
+            throw new DomainException(CredenciaisInvalidas);
+
+        // Atualiza silenciosamente hashes emitidos com parâmetros antigos.
+        if (_passwordHasher.PrecisaRehash(usuario.SenhaHash))
+        {
+            usuario.AlterarSenhaHash(_passwordHasher.Hash(request.Senha));
+            await _usuarioRepository.AtualizarAsync(usuario, cancellationToken);
+        }
 
         return Mapear(usuario);
     }

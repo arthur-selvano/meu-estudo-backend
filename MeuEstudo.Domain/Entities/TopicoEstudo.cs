@@ -10,6 +10,7 @@ namespace MeuEstudo.Domain.Entities;
 public class TopicoEstudo
 {
     private const int TituloMaxLength = 200;
+    private const int DescricaoMaxLength = 5000;
 
     public Guid Id { get; private set; }
     public Guid GrupoId { get; private set; }
@@ -72,12 +73,28 @@ public class TopicoEstudo
         CriadoPorId = criadoPorId;
         ResponsavelId = responsavelId;
         Titulo = tituloNormalizado;
-        Descricao = string.IsNullOrWhiteSpace(descricao) ? null : descricao.Trim();
+        Descricao = NormalizarDescricao(descricao);
         Prioridade = prioridade;
         Ordem = ordem;
         DataPrevista = dataPrevista;
         Concluido = concluido;
         CriadoEm = DateTime.UtcNow;
+    }
+
+    private static string? NormalizarDescricao(string? descricao)
+    {
+        if (string.IsNullOrWhiteSpace(descricao))
+            return null;
+
+        var normalizada = descricao.Trim();
+
+        if (normalizada.Length > DescricaoMaxLength)
+        {
+            throw new DomainException(
+                $"A descrição do tópico deve ter no máximo {DescricaoMaxLength} caracteres.");
+        }
+
+        return normalizada;
     }
 
     /// <summary>

@@ -9,22 +9,26 @@ namespace MeuEstudo.Api.Services;
 
 public sealed class TokenService : ITokenService
 {
-    private const int HorasDeValidade = 2;
-
     private readonly JwtSettings _jwtSettings;
 
     public TokenService(IOptions<JwtSettings> jwtSettings)
     {
-        _jwtSettings = jwtSettings.Value;
+        _jwtSettings = jwtSettings?.Value
+            ?? throw new ArgumentNullException(nameof(jwtSettings));
     }
 
-    public string GerarToken(Guid usuarioId, string nome, string email)
+    public string GerarToken(Guid usuarioId, string nome)
     {
+        if (usuarioId == Guid.Empty)
+            throw new ArgumentException("O identificador do usuário é obrigatório.", nameof(usuarioId));
+
+        var agora = DateTime.UtcNow;
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, usuarioId.ToString()),
             new Claim(ClaimTypes.Name, nome),
-            new Claim(ClaimTypes.Email, email)
+            // jti permite identificar a emissão do token em logs e futuras listas de revogação.
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N"))
         };
 
         var chave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
@@ -34,8 +38,8 @@ public sealed class TokenService : ITokenService
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
-            notBefore: DateTime.UtcNow,
-            expires: DateTime.UtcNow.AddHours(HorasDeValidade),
+            notBefore: agora,
+            expires: agora.AddMinutes(_jwtSettings.ExpiresMinutes),
             signingCredentials: credenciais);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

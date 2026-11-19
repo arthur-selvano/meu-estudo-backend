@@ -109,6 +109,9 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
         if (string.IsNullOrWhiteSpace(request.Email))
             throw new DomainException("O e-mail do usuário a ser convidado é obrigatório.");
 
+        if (request.Email.Trim().Length > 150)
+            throw new DomainException("O e-mail informado é inválido.");
+
         var grupo = await ObterGrupoAsync(grupoId, cancellationToken);
 
         // Antes de consultar o e-mail, garante que o solicitante é o dono: assim um

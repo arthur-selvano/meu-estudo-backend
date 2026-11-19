@@ -48,8 +48,14 @@ public sealed class FotoPerfilService : IFotoPerfilService
         var caminhoCompleto = Path.Combine(diretorio, nomeArquivo);
 
         conteudo.Position = 0;
-        await using (var destino = File.Create(caminhoCompleto))
+        await using (var destino = new FileStream(
+                         caminhoCompleto,
+                         FileMode.CreateNew,
+                         FileAccess.Write,
+                         FileShare.None))
+        {
             await conteudo.CopyToAsync(destino, cancellationToken);
+        }
 
         return $"/{PastaRelativa}/{usuarioId}/{nomeArquivo}";
     }
