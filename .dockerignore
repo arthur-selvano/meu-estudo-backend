@@ -1,0 +1,36 @@
+# Artefatos de build locais
+**/bin/
+**/obj/
+**/TestResults/
+
+# Controle de versão e IDEs
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vs/
+.vscode/
+
+# Arquivos locais / ferramentas
+.env
+.env.*
+.claude/
+.superpowers/
+docs/
+*.user
+*.suo
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Uploads gerados em runtime (não fazem parte da imagem)
+MeuEstudos.Api/wwwroot/uploads/
+
+# Documentação
+README.md
+*.md
+
+# Projeto de testes (não é restaurado nem publicado na imagem)
+MeuEstudos.Tests/

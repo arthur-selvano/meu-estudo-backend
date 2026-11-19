@@ -18,5 +18,28 @@ services:
       timeout: 5s
       retries: 5
 
+  # Opcional: sobe a API em container junto com o Postgres.
+  # Uso: docker compose --profile app up -d --build
+  # Sem o profile, o comportamento antigo continua igual (só o Postgres).
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: meuestudos-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      PORT: 5123
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=meuestudos_db;Username=meuestudos_user;Password=meuestudos_password"
+    ports:
+      - "5123:5123"
+    volumes:
+      - uploads_data:/app/wwwroot/uploads
+
 volumes:
   postgres_data:
+  uploads_data:
