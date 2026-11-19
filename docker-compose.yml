@@ -4,16 +4,17 @@ services:
     container_name: meuestudos-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: meuestudos_user
-      POSTGRES_PASSWORD: meuestudos_password
-      POSTGRES_DB: meuestudos_db
+      POSTGRES_USER: ${POSTGRES_USER:?Defina POSTGRES_USER no arquivo .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Defina POSTGRES_DB no arquivo .env}
+    # Expõe o banco apenas no loopback da máquina de desenvolvimento.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U meuestudos_user -d meuestudos_db"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,6 +22,9 @@ services:
   # Opcional: sobe a API em container junto com o Postgres.
   # Uso: docker compose --profile app up -d --build
   # Sem o profile, o comportamento antigo continua igual (só o Postgres).
+  #
+  # Este profile usa ASPNETCORE_ENVIRONMENT=Development e serve apenas para
+  # desenvolvimento local. Nunca o utilize como configuração de produção.
   api:
     profiles: ["app"]
     build:
@@ -34,9 +38,12 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       PORT: 5123
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=meuestudos_db;Username=meuestudos_user;Password=meuestudos_password"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Jwt__Key: ${Jwt__Key:?Defina Jwt__Key no arquivo .env}
+      Jwt__Issuer: ${Jwt__Issuer:-MeuEstudo.Api}
+      Jwt__Audience: ${Jwt__Audience:-MeuEstudo.Frontend}
     ports:
-      - "5123:5123"
+      - "127.0.0.1:5123:5123"
     volumes:
       - uploads_data:/app/wwwroot/uploads
 
