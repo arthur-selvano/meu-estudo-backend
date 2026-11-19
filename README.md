@@ -1,4 +1,5 @@
-# MeuEstudos API
+# MeuEstudo API
+>>>>>>> 5895960 (atualizacao para o singular para organizacao)
 
 Backend em **.NET 10** para organização de estudos em quadros **Kanban**, com grupos
 de estudo, convites entre usuários, perfis com foto e atualização do quadro em
@@ -28,12 +29,21 @@ negócio isoladas no domínio e persistência em **PostgreSQL**.
 ## Estrutura da solução
 
 ```
+<<<<<<< HEAD
 MeuEstudos.slnx
 ├── MeuEstudos.Domain/          Entidades, enums, exceções e contratos de repositório
 ├── MeuEstudos.Application/     Casos de uso (services), DTOs e interfaces
 ├── MeuEstudos.Infrastructure/  EF Core, mapeamentos e repositórios
 ├── MeuEstudos.Api/             Controllers, hub SignalR, middlewares e serviços HTTP
 ├── MeuEstudos.Tests/           Testes unitários (xUnit) com fakes
+=======
+MeuEstudo.slnx
+├── MeuEstudo.Domain/          Entidades, enums, exceções e contratos de repositório
+├── MeuEstudo.Application/     Casos de uso (services), DTOs e interfaces
+├── MeuEstudo.Infrastructure/  EF Core, mapeamentos e repositórios
+├── MeuEstudo.Api/             Controllers, hub SignalR, middlewares e serviços HTTP
+├── MeuEstudo.Tests/           Testes unitários (xUnit) com fakes
+>>>>>>> 5895960 (atualizacao para o singular para organizacao)
 ├── docker-compose.yml          PostgreSQL 16 para desenvolvimento
 └── init.sql                    Schema inicial do banco
 ```
@@ -61,7 +71,11 @@ docker compose up -d
 dotnet restore
 
 # 3. Execute a API
+<<<<<<< HEAD
 dotnet run --project MeuEstudos.Api
+=======
+dotnet run --project MeuEstudo.Api
+>>>>>>> 5895960 (atualizacao para o singular para organizacao)
 ```
 
 A API fica disponível em:
@@ -83,7 +97,11 @@ A API fica disponível em:
 ## Configuração
 
 As configurações de desenvolvimento ficam em
+<<<<<<< HEAD
 `MeuEstudos.Api/appsettings.Development.json`:
+=======
+`MeuEstudo.Api/appsettings.Development.json`:
+>>>>>>> 5895960 (atualizacao para o singular para organizacao)
 
 | Chave | Descrição |
 | --- | --- |
@@ -194,7 +212,11 @@ curl -X POST http://localhost:5123/api/grupos \
   -d '{"titulo":"Cálculo I","descricao":"Revisão para a prova","tipo":"PESSOAL"}'
 ```
 
+<<<<<<< HEAD
 Há também requisições de exemplo em `MeuEstudos.Api/MeuEstudos.Api.http`.
+=======
+Há também requisições de exemplo em `MeuEstudo.Api/MeuEstudo.Api.http`.
+>>>>>>> 5895960 (atualizacao para o singular para organizacao)
 
 ---
 
@@ -204,7 +226,11 @@ Há também requisições de exemplo em `MeuEstudos.Api/MeuEstudos.Api.http`.
 dotnet test
 ```
 
+<<<<<<< HEAD
 A suíte (`MeuEstudos.Tests`) cobre as regras de domínio do quadro (colunas, cards,
+=======
+A suíte (`MeuEstudo.Tests`) cobre as regras de domínio do quadro (colunas, cards,
+>>>>>>> 5895960 (atualizacao para o singular para organizacao)
 responsáveis, conclusão) e os casos de uso da aplicação, usando implementações
 *fake* dos repositórios e do notificador em tempo real.
 
@@ -214,7 +240,11 @@ responsáveis, conclusão) e os casos de uso da aplicação, usando implementaç
 
 - Exceções de domínio (`DomainException`) e demais erros são tratados pelo
   `GlobalExceptionHandler`, retornando respostas no padrão **Problem Details**.
+<<<<<<< HEAD
 - Arquivos enviados ao perfil ficam em `MeuEstudos.Api/wwwroot/uploads/perfis`
+=======
+- Arquivos enviados ao perfil ficam em `MeuEstudo.Api/wwwroot/uploads/perfis`
+>>>>>>> 5895960 (atualizacao para o singular para organizacao)
   (ignorados pelo Git) e são servidos como arquivos estáticos.
 
 ---

@@ -26,11 +26,11 @@ Dockerfile
 docker-compose*.yml
 
 # Uploads gerados em runtime (não fazem parte da imagem)
-MeuEstudos.Api/wwwroot/uploads/
+MeuEstudo.Api/wwwroot/uploads/
 
 # Documentação
 README.md
 *.md
 
 # Projeto de testes (não é restaurado nem publicado na imagem)
-MeuEstudos.Tests/
+MeuEstudo.Tests/

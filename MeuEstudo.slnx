@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="MeuEstudo.Api/MeuEstudo.Api.csproj" />
+  <Project Path="MeuEstudo.Application/MeuEstudo.Application.csproj" />
+  <Project Path="MeuEstudo.Domain/MeuEstudo.Domain.csproj" />
+  <Project Path="MeuEstudo.Infrastructure/MeuEstudo.Infrastructure.csproj" />
+  <Project Path="MeuEstudo.Tests/MeuEstudo.Tests.csproj" />
+</Solution>

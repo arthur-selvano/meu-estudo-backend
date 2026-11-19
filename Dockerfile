@@ -6,18 +6,18 @@ WORKDIR /src
 
 # Copia apenas os .csproj primeiro: enquanto eles não mudarem, a camada de
 # restore do NuGet é reaproveitada do cache do Docker.
-COPY MeuEstudos.Api/MeuEstudos.Api.csproj MeuEstudos.Api/
-COPY MeuEstudos.Application/MeuEstudos.Application.csproj MeuEstudos.Application/
-COPY MeuEstudos.Infrastructure/MeuEstudos.Infrastructure.csproj MeuEstudos.Infrastructure/
-COPY MeuEstudos.Domain/MeuEstudos.Domain.csproj MeuEstudos.Domain/
+COPY MeuEstudo.Api/MeuEstudo.Api.csproj MeuEstudo.Api/
+COPY MeuEstudo.Application/MeuEstudo.Application.csproj MeuEstudo.Application/
+COPY MeuEstudo.Infrastructure/MeuEstudo.Infrastructure.csproj MeuEstudo.Infrastructure/
+COPY MeuEstudo.Domain/MeuEstudo.Domain.csproj MeuEstudo.Domain/
 
 # Restaura somente a API e suas dependências transitivas (Application,
 # Infrastructure e Domain). O projeto de testes não faz parte da imagem final.
-RUN dotnet restore MeuEstudos.Api/MeuEstudos.Api.csproj
+RUN dotnet restore MeuEstudo.Api/MeuEstudo.Api.csproj
 
 COPY . .
 
-RUN dotnet publish MeuEstudos.Api/MeuEstudos.Api.csproj \
+RUN dotnet publish MeuEstudo.Api/MeuEstudo.Api.csproj \
         --configuration Release \
         --output /app/publish \
         --no-restore \
@@ -47,4 +47,4 @@ EXPOSE 10000
 # ASPNETCORE_HTTP_PORTS (definido na imagem base como 8080) é removido para
 # garantir que apenas a porta do Render seja usada. O exec mantém o dotnet
 # como PID 1, permitindo desligamento gracioso no SIGTERM.
-ENTRYPOINT ["sh", "-c", "unset ASPNETCORE_HTTP_PORTS; exec dotnet MeuEstudos.Api.dll --urls \"http://+:${PORT:-10000}\""]
+ENTRYPOINT ["sh", "-c", "unset ASPNETCORE_HTTP_PORTS; exec dotnet MeuEstudo.Api.dll --urls \"http://+:${PORT:-10000}\""]
