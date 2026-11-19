@@ -74,6 +74,12 @@ public sealed class GrupoEstudoRepository : IGrupoEstudoRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task RemoverAsync(GrupoEstudo grupo, CancellationToken cancellationToken = default)
+    {
+        _context.GruposEstudo.Remove(grupo);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     private IQueryable<GrupoEstudo> ComMembrosETopicos()
         => _context.GruposEstudo
             .Include(g => g.Membros)

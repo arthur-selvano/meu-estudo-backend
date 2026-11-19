@@ -18,6 +18,10 @@ internal sealed class FakeUsuarioRepository : IUsuarioRepository
     public Task<Usuario?> ObterPorEmailAsync(string email, CancellationToken cancellationToken = default)
         => Task.FromResult<Usuario?>(null);
 
+    public Task<IReadOnlyCollection<Usuario>> ObterTodosAsync(
+        CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyCollection<Usuario>>(Array.Empty<Usuario>());
+
     public Task<IReadOnlyDictionary<Guid, string>> ObterNomesPorIdsAsync(
         IEnumerable<Guid> ids,
         CancellationToken cancellationToken = default)

@@ -19,6 +19,10 @@ public interface IUsuarioService
         Guid usuarioId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Lista os perfis públicos de todos os usuários para o diretório de membros.</summary>
+    Task<IReadOnlyCollection<PerfilPublicoResponse>> ListarPerfisPublicosAsync(
+        CancellationToken cancellationToken = default);
+
     /// <summary>Atualiza o perfil do próprio usuário autenticado.</summary>
     /// <exception cref="MeuEstudos.Domain.Exceptions.DomainException">Dados inválidos.</exception>
     /// <exception cref="KeyNotFoundException">Usuário inexistente.</exception>

@@ -60,4 +60,15 @@ public interface IGrupoEstudoService
         Guid topicoId,
         AlterarResponsavelTopicoRequest request,
         CancellationToken cancellationToken = default);
+
+    Task RemoverMembroAsync(
+        Guid usuarioId,
+        Guid grupoId,
+        Guid membroId,
+        CancellationToken cancellationToken = default);
+
+    Task ExcluirGrupoAsync(
+        Guid usuarioId,
+        Guid grupoId,
+        CancellationToken cancellationToken = default);
 }

@@ -89,6 +89,35 @@ public sealed class GruposController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Remove um membro (ou convite pendente) do grupo. Apenas o dono pode executar.</summary>
+    [HttpDelete("{id:guid}/membros/{membroId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoverMembro(
+        [FromRoute] Guid id,
+        [FromRoute] Guid membroId,
+        CancellationToken cancellationToken)
+    {
+        await _grupoEstudoService.RemoverMembroAsync(ObterUsuarioId(), id, membroId, cancellationToken);
+
+        return NoContent();
+    }
+
+    /// <summary>Exclui o quadro e todo o seu conteúdo. Apenas o dono pode executar.</summary>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Excluir(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        await _grupoEstudoService.ExcluirGrupoAsync(ObterUsuarioId(), id, cancellationToken);
+
+        return NoContent();
+    }
+
     /// <summary>Adiciona um card/tópico na coluna informada do grupo.</summary>
     [HttpPost("{id:guid}/topicos")]
     [ProducesResponseType<TopicoEstudoResponse>(StatusCodes.Status201Created)]

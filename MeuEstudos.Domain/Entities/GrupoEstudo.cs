@@ -129,6 +129,31 @@ public class GrupoEstudo
     }
 
     /// <summary>
+    /// Remove um membro (ou um convite pendente) do grupo. Apenas o dono pode remover.
+    /// Cards atribuídos à pessoa ficam sem responsável para manter o quadro consistente.
+    /// </summary>
+    /// <param name="solicitanteId">Usuário que está executando a ação; precisa ser o dono do grupo.</param>
+    /// <param name="usuarioId">Usuário cujo vínculo será removido.</param>
+    public void RemoverMembro(Guid solicitanteId, Guid usuarioId)
+    {
+        GarantirQueEhDono(solicitanteId);
+
+        if (usuarioId == Guid.Empty)
+            throw new DomainException("O membro a ser removido é obrigatório.");
+
+        if (usuarioId == DonoId)
+            throw new DomainException("O dono do grupo não pode ser removido.");
+
+        var membro = _membros.SingleOrDefault(m => m.UsuarioId == usuarioId)
+                     ?? throw new DomainException("Membro não encontrado neste grupo.");
+
+        _membros.Remove(membro);
+
+        foreach (var topico in _topicos.Where(t => t.ResponsavelId == usuarioId))
+            topico.DefinirResponsavel(null);
+    }
+
+    /// <summary>
     /// Adiciona um card ao quadro, na coluna informada e no fim da fila dessa coluna.
     /// Permitido apenas para o dono ou para membros com convite aceito.
     /// O responsável, quando informado, também deve ser o dono ou um membro aceito.
