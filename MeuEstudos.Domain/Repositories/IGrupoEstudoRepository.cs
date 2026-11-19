@@ -44,4 +44,9 @@ public interface IGrupoEstudoRepository
     Task AdicionarAsync(GrupoEstudo grupo, CancellationToken cancellationToken = default);
 
     Task AtualizarAsync(GrupoEstudo grupo, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Remove o grupo e, em cascata, seus membros, colunas e tópicos.
+    /// </summary>
+    Task RemoverAsync(GrupoEstudo grupo, CancellationToken cancellationToken = default);
 }

@@ -33,6 +33,14 @@ public sealed class UsuarioService : IUsuarioService
         return MapearPerfilPublico(usuario);
     }
 
+    public async Task<IReadOnlyCollection<PerfilPublicoResponse>> ListarPerfisPublicosAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var usuarios = await _usuarioRepository.ObterTodosAsync(cancellationToken);
+
+        return usuarios.Select(MapearPerfilPublico).ToList();
+    }
+
     public async Task<MeuPerfilResponse> AtualizarPerfilAsync(
         Guid usuarioId,
         AtualizarPerfilRequest request,

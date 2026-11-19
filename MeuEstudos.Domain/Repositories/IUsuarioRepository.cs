@@ -12,6 +12,11 @@ public interface IUsuarioRepository
     Task<Usuario?> ObterPorEmailAsync(string email, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Lista todos os usuários em ordem alfabética, para o diretório de membros da comunidade.
+    /// </summary>
+    Task<IReadOnlyCollection<Usuario>> ObterTodosAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Busca os nomes dos usuários correspondentes aos ids informados. Ids desconhecidos são omitidos.
     /// </summary>
     Task<IReadOnlyDictionary<Guid, string>> ObterNomesPorIdsAsync(

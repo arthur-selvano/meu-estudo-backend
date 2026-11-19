@@ -24,6 +24,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IFotoPerfilService, FotoPerfilService>();
+builder.Services.AddScoped<IArquivoPublicacaoService, ArquivoPublicacaoService>();
 builder.Services.AddScoped<IQuadroNotificador, QuadroNotificador>();
 
 var jwtSettings = builder.Configuration
@@ -90,6 +91,7 @@ builder.Services.AddCors(options =>
 // enxergar arquivos gravados depois.
 var webRootPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
 Directory.CreateDirectory(Path.Combine(webRootPath, "uploads", "perfis"));
+Directory.CreateDirectory(Path.Combine(webRootPath, "uploads", "publicacoes"));
 
 var app = builder.Build();
 

@@ -24,6 +24,13 @@ public sealed class UsuarioRepository : IUsuarioRepository
         return _context.Usuarios.FirstOrDefaultAsync(u => u.Email == emailNormalizado, cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Usuario>> ObterTodosAsync(
+        CancellationToken cancellationToken = default)
+        => await _context.Usuarios
+            .AsNoTracking()
+            .OrderBy(usuario => usuario.Nome)
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyDictionary<Guid, string>> ObterNomesPorIdsAsync(
         IEnumerable<Guid> ids,
         CancellationToken cancellationToken = default)

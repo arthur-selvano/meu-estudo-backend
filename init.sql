@@ -81,3 +81,45 @@ CREATE INDEX idx_colunas_grupo_ordem ON colunas_kanban(grupo_id, ordem);
 CREATE INDEX idx_topicos_grupo ON topicos_estudo(grupo_id);
 CREATE INDEX idx_topicos_coluna_ordem ON topicos_estudo(coluna_id, ordem);
 CREATE INDEX idx_topicos_responsavel ON topicos_estudo(responsavel_id);
+
+-- Comunidade: publicações do feed (pedido de estudo, aula, link ou documento)
+CREATE TABLE IF NOT EXISTS publicacoes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    autor_id UUID NOT NULL,
+    tipo VARCHAR(20) NOT NULL DEFAULT 'ESTUDO', -- 'ESTUDO' | 'AULA' | 'LINK' | 'DOCUMENTO'
+    titulo VARCHAR(150),
+    conteudo VARCHAR(1000) NOT NULL,
+    link_url VARCHAR(500),
+    arquivo_url VARCHAR(500),
+    arquivo_nome VARCHAR(255),
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_publicacao_autor FOREIGN KEY (autor_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+    CONSTRAINT chk_tipo_publicacao CHECK (tipo IN ('ESTUDO', 'AULA', 'LINK', 'DOCUMENTO'))
+);
+
+-- Comunidade: comentários das publicações
+CREATE TABLE IF NOT EXISTS comentarios_publicacao (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    publicacao_id UUID NOT NULL,
+    autor_id UUID NOT NULL,
+    conteudo VARCHAR(500) NOT NULL,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_comentario_publicacao FOREIGN KEY (publicacao_id) REFERENCES publicacoes(id) ON DELETE CASCADE,
+    CONSTRAINT fk_comentario_autor FOREIGN KEY (autor_id) REFERENCES usuarios(id) ON DELETE RESTRICT
+);
+
+-- Comunidade: curtidas (uma por usuário em cada publicação)
+CREATE TABLE IF NOT EXISTS curtidas_publicacao (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    publicacao_id UUID NOT NULL,
+    usuario_id UUID NOT NULL,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_curtida_publicacao FOREIGN KEY (publicacao_id) REFERENCES publicacoes(id) ON DELETE CASCADE,
+    CONSTRAINT fk_curtida_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    CONSTRAINT uq_publicacao_usuario UNIQUE (publicacao_id, usuario_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_publicacoes_autor ON publicacoes(autor_id);
+CREATE INDEX IF NOT EXISTS idx_publicacoes_criado_em ON publicacoes(criado_em);
+CREATE INDEX IF NOT EXISTS idx_comentarios_publicacao ON comentarios_publicacao(publicacao_id, criado_em);
+CREATE INDEX IF NOT EXISTS idx_curtidas_usuario ON curtidas_publicacao(usuario_id);

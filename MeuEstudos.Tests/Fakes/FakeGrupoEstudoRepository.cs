@@ -53,4 +53,10 @@ internal sealed class FakeGrupoEstudoRepository : IGrupoEstudoRepository
         _grupos[grupo.Id] = grupo;
         return Task.CompletedTask;
     }
+
+    public Task RemoverAsync(GrupoEstudo grupo, CancellationToken cancellationToken = default)
+    {
+        _grupos.Remove(grupo.Id);
+        return Task.CompletedTask;
+    }
 }

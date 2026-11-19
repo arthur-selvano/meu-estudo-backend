@@ -36,6 +36,17 @@ public sealed class PerfisController : ControllerBase
         return Ok(perfil);
     }
 
+    /// <summary>Lista os perfis públicos de todos os usuários para o diretório de membros.</summary>
+    [HttpGet]
+    [ProducesResponseType<IReadOnlyCollection<PerfilPublicoResponse>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<PerfilPublicoResponse>>> ListarPerfisPublicos(
+        CancellationToken cancellationToken)
+    {
+        var perfis = await _usuarioService.ListarPerfisPublicosAsync(cancellationToken);
+
+        return Ok(perfis);
+    }
+
     /// <summary>Retorna o perfil público de qualquer usuário, sem dados privados.</summary>
     [HttpGet("{id:guid}/profile")]
     [ProducesResponseType<PerfilPublicoResponse>(StatusCodes.Status200OK)]

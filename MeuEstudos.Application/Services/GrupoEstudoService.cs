@@ -253,6 +253,31 @@ public sealed class GrupoEstudoService : IGrupoEstudoService
         return resposta;
     }
 
+    public async Task RemoverMembroAsync(
+        Guid usuarioId,
+        Guid grupoId,
+        Guid membroId,
+        CancellationToken cancellationToken = default)
+    {
+        var grupo = await ObterGrupoAsync(grupoId, cancellationToken);
+
+        grupo.RemoverMembro(usuarioId, membroId);
+
+        await _grupoEstudoRepository.AtualizarAsync(grupo, cancellationToken);
+    }
+
+    public async Task ExcluirGrupoAsync(
+        Guid usuarioId,
+        Guid grupoId,
+        CancellationToken cancellationToken = default)
+    {
+        var grupo = await ObterGrupoAsync(grupoId, cancellationToken);
+
+        grupo.GarantirQueEhDono(usuarioId);
+
+        await _grupoEstudoRepository.RemoverAsync(grupo, cancellationToken);
+    }
+
     private static IReadOnlyCollection<Guid> DestinatariosDoQuadro(GrupoEstudo grupo)
         => grupo.Membros
             .Where(membro => membro.EhMembroAceito())
