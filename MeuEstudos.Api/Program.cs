@@ -79,9 +79,12 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendDev", policy =>
+    options.AddPolicy("Frontend", policy =>
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(
+                "http://localhost:5173",
+                "https://meu-estudos-frontend.vercel.app"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
@@ -111,7 +114,7 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new PhysicalFileProvider(webRootPath)
 });
 
-app.UseCors("FrontendDev");
+app.UseCors("Frontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
